@@ -3,17 +3,17 @@ import { View, Text, Image, StyleSheet, Button } from "react-native";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 
-// Định nghĩa kiểu SinhVien
-type SinhVien = {
+// Định nghĩa kiểu SanPham
+type SanPham = {
     id: number;
-    maSV_ph48770: string;
-    ten_ph48770: string;
-    anh_ph48770: string;
-    dtb_ph48770: number;
+    tenSP: string;
+    loaiSP: string;
+    anhSP: string;
+    giaSP: number;
 };
 
 // Định nghĩa kiểu tham số cho DetailScreen
-type DetailScreenRouteProp = RouteProp<{ Detail: { item: SinhVien } }, "Detail">;
+type DetailScreenRouteProp = RouteProp<{ Detail: { item: SanPham } }, "Detail">;
 type DetailScreenNavigationProp = StackNavigationProp<any>;
 
 const DetailScreen: React.FC = () => {
@@ -24,10 +24,10 @@ const DetailScreen: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <Image source={{ uri: item.anh_ph48770 }} style={styles.image} />
-            <Text style={styles.text}>Mã SV: {item.maSV_ph48770}</Text>
-            <Text style={styles.text}>Tên: {item.ten_ph48770}</Text>
-            <Text style={styles.text}>Điểm trung bình: {item.dtb_ph48770}</Text>
+            <Image source={{ uri: item.anhSP }} style={styles.image} />
+            <Text style={styles.text}>Ten: {item.tenSP}</Text>
+            <Text style={styles.text}>Loai: {item.loaiSP}</Text>
+            <Text style={styles.text}>Gia: {item.giaSP}</Text>
             <Button title="Quay lại" onPress={() => navigation.goBack()} />
         </View>
     );

@@ -2,42 +2,43 @@ import React, { useEffect, useState } from "react"; //React và các Hook như u
 import { View, Text, TouchableOpacity, StyleSheet, Image, FlatList, Modal, Button, TextInput, Alert, } from "react-native"; //giúp xây dựng UI.
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from '@react-navigation/stack';
-
+import { Picker } from '@react-native-picker/picker';
 import axios from "axios"; //Dùng để gọi API lấy dữ liệu
+import removeAccents from "remove-accents"; // Cài package nếu cần
 // Định nghĩa kiểu RootParamList cho oStack Navigator
 type RootParamList = {
-    Detail: { item: SinhVien };
+    Detail: { item: SanPham };
 };
 //  Khai báo kiểu dữ liệu 
-type SinhVien = {
+type SanPham = {
     id: number;
-    maSV_ph48770: string;
-    ten_ph48770: string;
-    anh_ph48770: string;
-    dtb_ph48770: number;
+    tenSP: string;
+    loaiSP: string;
+    anhSP: string;
+    giaSP: number;
 }
 type ScreenNavigationProp = StackNavigationProp<RootParamList, 'Detail'>;
 
-const QLSV = () => {
+const QLSP = () => {
     //const [Biến state chứa danh sách, Hàm dùng để cập nhật giá trị] = mảng rỗng<kiểu dữ liệu[]>([]);
-    const [danhSachSinhVien, setDanhSachSinhVien] = useState<SinhVien[]>([]);
+    const [danhSachSanPham, setDanhSachSanPham] = useState<SanPham[]>([]);
     // const [dữ liệu của danh chỉnh sửa, Hàm cập nhật giá trị ] = useState<Categories | null>(null);
-    const [editingDanhSachSinhVien, setEditingDanhSachSinhVien] = useState<SinhVien | null>(null);
+    const [editingDanhSachSanPham, setEditingDanhSachSanPham] = useState<SanPham | null>(null);
     const [loading, setLoading] = useState(true); // tải dữ liệu api
     const [modalVisible, setModalVisible] = useState(false); // hiện model .mặc định đang ẩn
 
     // search b1
-    const [filteredDanhSach, setFilteredDanhSach] = useState<SinhVien[]>([]); // Danh sách lọc theo tìm kiếm
+    const [filteredDanhSach, setFilteredDanhSach] = useState<SanPham[]>([]); // Danh sách lọc theo tìm kiếm
     const [searchText, setSearchText] = useState(""); // Lưu từ khóa tìm kiếm
     
     // Sắp xếp b1
-    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+    const [sortByName, setSortByName] = useState<"asc" | "desc">("asc");
 
     // Lưu thông tin nhập vào
-    const [maSV_ph48770, setMaSV_ph48770] = useState("");
-    const [ten_ph48770, setTen_ph48770] = useState("");
-    const [anh_ph48770, setAnh_ph48770] = useState("");
-    const [dtb_ph48770, setDtb_ph48770] = useState("");
+    const [tenSP, settenSP] = useState("");
+    const [loaiSP, setloaiSP] = useState("");
+    const [anhSP, setanhSP] = useState("");
+    const [giaSP, setgiaSP] = useState("");
     const navigation = useNavigation<ScreenNavigationProp>();
     // Khi khi component được render lần đầu tiên sẽ gọi fetchData();
     useEffect(() => {
@@ -49,10 +50,10 @@ const QLSV = () => {
         try {
             //Sử dụng Axios để gửi một request GET đến API MockAPI.
             // await đảm bảo rằng React đợi cho đến khi API phản hồi trước khi tiếp tục thực thi code.
-            const response = await axios.get<SinhVien[]>( //Categories[] kiểu dữ liệu đã khai báo ở trên
-                "https://67c1de8061d8935867e48e06.mockapi.io/sinh_vien"
+            const response = await axios.get<SanPham[]>( //Categories[] kiểu dữ liệu đã khai báo ở trên
+                "https://67c3d36d89e47db83dd28ce9.mockapi.io/san_pham"
             );
-            setDanhSachSinhVien(response.data); //Sau khi nhận được dữ liệu từ API, ta cập nhật state categories bằng dữ liệu từ API.
+            setDanhSachSanPham(response.data); //Sau khi nhận được dữ liệu từ API, ta cập nhật state categories bằng dữ liệu từ API.
             // search b2
             setFilteredDanhSach(response.data); // Cập nhật danh sách lọc ban đầu
 
@@ -65,68 +66,82 @@ const QLSV = () => {
     // search b3
     const handleSearch = (text: string) => {
         setSearchText(text);
+        const normalizedText = removeAccents(text.toLowerCase());
+
         if (text.trim() === "") {
-            setFilteredDanhSach(danhSachSinhVien);
+            setFilteredDanhSach(danhSachSanPham);
         } else {
-            const filteredData = danhSachSinhVien.filter(item =>
-                item.ten_ph48770.toLowerCase().includes(text.toLowerCase())
+            const filteredData = danhSachSanPham.filter(item =>
+                removeAccents(item.tenSP.toLowerCase()).includes(normalizedText) 
             );
             setFilteredDanhSach(filteredData);
         }
     };
     // Sắp xếp b2
-    const sortDanhSach = () => {
+    const sortDanhSach = (type: "name" | "price") => {
         const sortedList = [...filteredDanhSach].sort((a, b) => {
-            return sortOrder === "asc" ? a.dtb_ph48770 - b.dtb_ph48770 : b.dtb_ph48770 - a.dtb_ph48770;
+            if (type === "price") {
+                return sortByName === "asc" ? a.giaSP - b.giaSP : b.giaSP - a.giaSP;
+            } else {
+                return sortByName === "asc"
+                    ? a.tenSP.localeCompare(b.tenSP)
+                    : b.tenSP.localeCompare(a.tenSP);
+            }
         });
+
         setFilteredDanhSach(sortedList);
     };
 
     // HÀM LƯU DƯ LIỆU
     const handleSave = async () => {
-        if (!ten_ph48770) return;
+        if (!loaiSP) return;
  // Kiểm tra các trường không được để trống
-    if (!maSV_ph48770.trim() || !ten_ph48770.trim() || !anh_ph48770.trim() || !dtb_ph48770.trim()) {
+    if (!tenSP.trim() || !loaiSP.trim() || !anhSP.trim() || !giaSP.trim()) {
         Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin.");
         return;
     }
-
+  
     // Kiểm tra mã sinh viên có đúng định dạng không (chỉ chấp nhận chữ và số)
-    if (!/^[a-zA-Z0-9]+$/.test(maSV_ph48770)) {
-        Alert.alert("Lỗi", "Mã sinh viên chỉ được chứa chữ và số.");
-        return;
-    }
+    // if (!/^[a-zA-Z0-9]+$/.test(tenSP)) {
+    //     Alert.alert("Lỗi", "Mã sinh viên chỉ được chứa chữ và số.");
+    //     return;  
+    // }
 
     // Kiểm tra điểm trung bình có hợp lệ không (phải là số từ 0 đến 10)
-    const dtb = parseFloat(dtb_ph48770);
-    if (isNaN(dtb) || dtb < 0 || dtb > 10) {
-        Alert.alert("Lỗi", "Điểm trung bình phải là số từ 0 đến 10.");
+    // const dtb = parseFloat(giaSP);
+    // if (isNaN(dtb) || dtb < 0 || dtb > 10) {
+    //     Alert.alert("Lỗi", "Điểm trung bình phải là số từ 0 đến 10.");
+    //     return;
+    //     }
+    const gia = parseFloat(giaSP);
+    if (isNaN(gia) || gia <= 0) {
+        Alert.alert("Lỗi", "Giá sản phẩm phải là số hợp lệ và lớn hơn 0.");
         return;
     }
 
     // Kiểm tra URL ảnh có hợp lệ không
     const urlRegex = /^(https?:\/\/.*\.(?:png|jpg|jpeg|gif|svg))$/i;
-    if (!urlRegex.test(anh_ph48770)) {
+    if (!urlRegex.test(anhSP)) {
         Alert.alert("Lỗi", "Ảnh phải là URL hợp lệ (định dạng: jpg, png, jpeg, gif, svg).");
         return;
     }
         try {
-            if (editingDanhSachSinhVien) {
+            if (editingDanhSachSanPham) {
                 // Gửi yêu cầu cập nhật danh mục
-                await axios.put(`https://67c1de8061d8935867e48e06.mockapi.io/sinh_vien/${editingDanhSachSinhVien.id}`, {
-                    maSV_ph48770,
-                    ten_ph48770,
-                    anh_ph48770,
-                    dtb_ph48770: parseFloat(dtb_ph48770),
+                await axios.put(`https://67c3d36d89e47db83dd28ce9.mockapi.io/san_pham/${editingDanhSachSanPham.id}`, {
+                    tenSP,
+                    loaiSP,
+                    anhSP,
+                    giaSP: parseFloat(giaSP),
                 });
 
             } else {
                 // Gửi yêu cầu tạo danh mục mới
-                await axios.post("https://67c1de8061d8935867e48e06.mockapi.io/sinh_vien", {
-                    maSV_ph48770,
-                    ten_ph48770,
-                    anh_ph48770,
-                    dtb_ph48770: parseFloat(dtb_ph48770),
+                await axios.post("https://67c3d36d89e47db83dd28ce9.mockapi.io/san_pham", {
+                    tenSP,
+                    loaiSP,
+                    anhSP,
+                    giaSP: parseFloat(giaSP),
                 });
             }
 
@@ -145,7 +160,7 @@ const QLSV = () => {
                 text: "Xóa",
                 onPress: async () => {
                     try {
-                        await axios.delete(`https://67c1de8061d8935867e48e06.mockapi.io/sinh_vien/${id}`);
+                        await axios.delete(`https://67c3d36d89e47db83dd28ce9.mockapi.io/san_pham/${id}`);
                         fetchData(); // Cập nhật danh sách sau khi xóa
                     } catch (error) {
                         console.error("Lỗi khi xóa danh mục:", error);
@@ -156,19 +171,19 @@ const QLSV = () => {
         ]);
     };
     // HÀM HIỆN THỊ MODEL
-    const openDialog = (sinhVien?: SinhVien) => { // tham số tùy chọn categories có kiểu Categories
-        if (sinhVien) { // có giá trị thì hiểu là sửa 
-            setEditingDanhSachSinhVien(sinhVien);//Gán đối tượng vào state
-            setMaSV_ph48770(sinhVien.maSV_ph48770); //Lưu thông tin đang được chỉnh sửa
-            setTen_ph48770(sinhVien.ten_ph48770); //Lưu thông tin đang được chỉnh sửa
-            setAnh_ph48770(sinhVien.anh_ph48770); //Lưu thông tin đang được chỉnh sửa
-            setDtb_ph48770(sinhVien.dtb_ph48770.toString());
+    const openDialog = (SanPham?: SanPham) => { // tham số tùy chọn categories có kiểu Categories
+        if (SanPham) { // có giá trị thì hiểu là sửa 
+            setEditingDanhSachSanPham(SanPham);//Gán đối tượng vào state
+            settenSP(SanPham.tenSP); //Lưu thông tin đang được chỉnh sửa
+            setloaiSP(SanPham.loaiSP); //Lưu thông tin đang được chỉnh sửa
+            setanhSP(SanPham.anhSP); //Lưu thông tin đang được chỉnh sửa
+            setgiaSP(SanPham.giaSP.toString());
         } else { // không có giá trị hiểu là xóa
-            setEditingDanhSachSinhVien(null);
-            setMaSV_ph48770("");
-            setTen_ph48770("");
-            setAnh_ph48770("");
-            setDtb_ph48770("");
+            setEditingDanhSachSanPham(null);
+            settenSP("");
+            setloaiSP("");
+            setanhSP("");
+            setgiaSP("");
         }
         setModalVisible(true);
     };
@@ -187,26 +202,26 @@ const QLSV = () => {
             <TouchableOpacity
                 style={styles.sortButton}
                 onPress={() => {
-                    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                    sortDanhSach();
+                    setSortByName(sortByName === "asc" ? "desc" : "asc");
+                    sortDanhSach("name");
                 }}>
                 <Text style={styles.buttonText}>
-                    {sortOrder === "asc" ? "Sắp xếp giảm dần" : "Sắp xếp tăng dần"}
+                    {sortByName === "asc" ? "Sắp xếp Z-A" : "Sắp xếp A-Z"}
                 </Text>
             </TouchableOpacity>
 
             <FlatList
-                // data={danhSachSinhVien}
+                // data={danhSachSanPham}
                 data={filteredDanhSach} // search b5
                 keyExtractor={(item) => String(item.id)}
                 renderItem={({ item }) => (
                     <TouchableOpacity onPress={() => navigation.navigate('Detail', { item })}>
                     <View style={styles.productItem} >
-                        <Image source={{ uri: item.anh_ph48770 }} style={styles.productImage} />
+                        <Image source={{ uri: item.anhSP }} style={styles.productImage} />
                         <View style={styles.productInfo}>
-                            <Text>Mã: {item.maSV_ph48770}</Text>
-                            <Text>Tên: {item.ten_ph48770}</Text>
-                            <Text>DTB: {item.dtb_ph48770}</Text>
+                            <Text>Ten {item.tenSP}</Text>
+                            <Text>Loai {item.loaiSP}</Text>
+                            <Text>Gia {item.giaSP}</Text>
                         </View>
                         <View style={styles.actions}>
                             <TouchableOpacity style={styles.editButton} onPress={() => openDialog(item)}>
@@ -228,31 +243,35 @@ const QLSV = () => {
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>
                             {/* Nếu editingCategories là true, tiêu đề sẽ là "Sửa" (nghĩa là sửa đổi). */}
-                            {editingDanhSachSinhVien ? "Sửa" : "Thêm"}
+                            {editingDanhSachSanPham ? "Sửa" : "Thêm"}
                         </Text>
                         <TextInput
                             style={styles.input}
-                            value={maSV_ph48770}
-                            onChangeText={setMaSV_ph48770}
-                            placeholder="Mã"
+                            value={tenSP}
+                            onChangeText={settenSP}
+                            placeholder="Ten"
+                        />
+                        <Picker
+                            selectedValue={loaiSP}
+                            onValueChange={(itemValue) => setloaiSP(itemValue)}
+                            style={styles.picker}
+                        >
+                            <Picker.Item label="Chọn loại sản phẩm" value="" />
+                            <Picker.Item label="Điện thoại" value="Điện thoại" />
+                            <Picker.Item label="Laptop" value="Laptop" />
+                            <Picker.Item label="Phụ kiện" value="Phụ kiện" />
+                        </Picker>
+                        <TextInput
+                            style={styles.input}
+                            value={anhSP}
+                            onChangeText={setanhSP}
+                            placeholder="anhSP"
                         />
                         <TextInput
                             style={styles.input}
-                            value={ten_ph48770}
-                            onChangeText={setTen_ph48770}
-                            placeholder="Tên"
-                        />
-                        <TextInput
-                            style={styles.input}
-                            value={anh_ph48770}
-                            onChangeText={setAnh_ph48770}
-                            placeholder="anh"
-                        />
-                        <TextInput
-                            style={styles.input}
-                            value={dtb_ph48770}
-                            onChangeText={setDtb_ph48770}
-                            placeholder="dtb"
+                            value={giaSP}
+                            onChangeText={setgiaSP}
+                            placeholder="giaSP"
                         />
                         <Button title="Lưu" onPress={handleSave} />
                         <Button title="Hủy" color="red" onPress={() => setModalVisible(false)} />
@@ -379,6 +398,15 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 10,
     },
+    picker: {
+        height: 50,
+        borderWidth: 1,
+        borderColor: "#ccc",
+        borderRadius: 5,
+        marginBottom: 10,
+        backgroundColor: "#fff",
+    }
+
 });
 
-export default QLSV;
+export default QLSP;
