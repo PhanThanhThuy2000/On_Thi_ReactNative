@@ -1,39 +1,27 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import React from 'react';
+import { createStackNavigator } from '@react-navigation/stack';
+import 'expo-router/entry';
+import Page1Screen from './screens/page1';
+import Page2Screen from './screens/page2';
+import Page3Screen from './screens/page3';
+import Page4Screen from './screens/page4';
+import QLSVScreen from './screens/QLSV';
+import DetailScreen from './screens/Detail';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+import AppScreen from './app';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+const Stack = createStackNavigator();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Stack.Navigator initialRouteName="QLSV">
+      <Stack.Screen name="app" component={AppScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="page1" component={Page1Screen} options={{ headerShown: false }} />
+      <Stack.Screen name="page2" component={Page2Screen} options={{ headerShown: false }} />
+      <Stack.Screen name="page3" component={Page3Screen} options={{ headerShown: false }} />
+      <Stack.Screen name="page4" component={Page4Screen} options={{ headerShown: false }} />
+      <Stack.Screen name="QLSV" component={QLSVScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Detail" component={DetailScreen} options={{ headerShown: false }} />
+    </Stack.Navigator>
   );
 }
